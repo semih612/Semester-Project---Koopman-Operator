@@ -36,9 +36,12 @@ Ntraj = 300;
 %[psi_true_all, psi_pred_one_step, prediction_error, state_error] = one_step_prediction(x, u, Obs_state_1, A, B, C, Ntraju, Nsim, n, true);
 [psi_true_all, psi_pred_sim, prediction_error, state_error, stopTraj] = simulation(x_test, u_test, Obs_state, A_iv, B_iv, 0, Ntraj, Nsim_test, n, false);
 %openfig('C:\Users\semihzaman\OneDrive - sabanciuniv.edu\Desktop\SemesterProject\LiftingFunc\Figures_RMSE\NoLifting.fig');
-delete('A_koop.mat');
+
+% delete is necessary here %
+delete('A_koop.mat');  
 delete('B_koop.mat');
 delete('C_koop.mat');
+
 save('C:\Users\semihzaman\OneDrive - sabanciuniv.edu\Desktop\SemesterProject\OE\A_oe.mat','A_oe');
 save('C:\Users\semihzaman\OneDrive - sabanciuniv.edu\Desktop\SemesterProject\OE\B_oe.mat','B_oe');
 
