@@ -94,53 +94,61 @@ function [A_val, B_val] = calculate_A_B(x_train, u_train, Ntraj, Obs_state, n, m
         B_val = B_iv;
      
     else if strcmp(mode, 'iv2')
-
+        Ntraj = Ntraj - 1; % For U_plus
         nObs_state = size(Obs_state(zeros(n,1)));
         Nlift = nObs_state;
         nZ = Nlift(1);   % lifted state dimension
 
-        pre_A = zeros(Nlift(1),Nlift(1));
-        pre_B = zeros(Nlift(1),1);
-        convergence1 = 1;
-        convergence2 = 1;
+        convergence = 1;
+        pre_A_iv = 0;
 
-        [~, Ntraj, Nsim] = size(u_train);
-        Xstates = reshape( x_train(:, 1:Ntraj, :), n, [] );     % n x (Ntraj*Nsim_total)
-        Ystates = reshape( x_train(:, 2:Ntraj+1, :), n, [] );   % n x (Ntraj*Nsim_total)
-        Uinputs = reshape( u_train(:, 1:Ntraj, :), m, [] );     % m x (Ntraj*Nsim_total)
-        X = Xstates;
-        Y = Ystates;
-        U = Uinputs;
+        [~, ~, Nsim] = size(u_train);
+        X = reshape( x_train(:, 1:Ntraj, :), n, [] );     % n x (Ntraj*Nsim_total)
+        X_plus = reshape( x_train(:, 2:Ntraj+1, :), n, [] );   % n x (Ntraj*Nsim_total)
+        U = reshape( u_train(:, 1:Ntraj, :), m, [] );     % m x (Ntraj*Nsim_total)
+        U_plus = reshape( u_train(:, 2:Ntraj+1, :), m, [] );     % m x (Ntraj*Nsim_total)
 
         % Compute lifted states
         X_lift = [];
         Y_lift = [];
         for i = 1:size(X, 2)
             X_lift(:, i) = Obs_state(X(:, i));
-            Y_lift(:, i) = Obs_state(Y(:, i));
+            Y_lift(:, i) = Obs_state(X_plus(:, i));
         end
         
         
-        while convergence1 > 1e-7
+        while convergence > -9999
 
             % Compute A and B
             M = [X_lift; U]; % Stack lifted states and inputs
-            AB_mat = Y_lift * pinv(M);  % size n x (n+m)
-            A_iv = AB_mat(:, 1:Nlift(1));
-            B_iv = AB_mat(:, Nlift(1)+1:end);
+
+            %AB_mat = Y_lift * pinv(M);  % size n x (n+m)
+            %A_iv = AB_mat(:, 1:Nlift(1));
+            %B_iv = AB_mat(:, Nlift(1)+1:end);
+
+            M_plus = [Y_lift; U_plus];
+            ABCD_mat = M_plus * pinv(M);
+            A_iv = ABCD_mat(1:Nlift(1), 1:Nlift(1));
+            B_iv = ABCD_mat(1:Nlift(1), Nlift(1)+1:end);
+            C_iv = ABCD_mat(Nlift(1)+1:end, 1:Nlift(1));
+            D_iv = ABCD_mat(Nlift(1)+1:end, Nlift(1)+1:end);
             
             Z_train_iv = zeros(Nlift(1),Ntraj+1,Nsim);
+            U_train_iv = zeros(1,Ntraj+1,Nsim);
             for sim = 1:Nsim
                 Z_train_iv(:,1,sim) = Obs_state(x_train(:,1,sim));
+                U_train_iv(:,1,sim) = u_train(:,1,sim);
                 for traj = 1:Ntraj
-                    Z_train_iv(:,traj+1,sim) = A_iv*Z_train_iv(:,traj, sim) + B_iv*u_train(1,traj,sim);
+                    %Z_train_iv(:,traj+1,sim) = A_iv*Z_train_iv(:,traj, sim) + B_iv*u_train(1,traj,sim);
+                    Z_train_iv(:,traj+1,sim) = A_iv*Z_train_iv(:,traj, sim) + B_iv*U_train_iv(1,traj,sim);
+                    U_train_iv(:,traj+1,sim) = C_iv*Z_train_iv(:,traj, sim) + D_iv*U_train_iv(1,traj,sim);
                 end
             end  
-            X_lift = reshape( Z_train_iv(:, 2:Ntraj+1, :), nZ, [] );
-            convergence1 = norm(A_iv - pre_A, 'fro')
-            convergence2 = norm(B_iv - pre_B, 'fro')
-            pre_A = A_iv;
-            pre_B = B_iv;
+            X_lift = reshape( Z_train_iv(:, 1:Ntraj, :), nZ, [] );
+            U = reshape( U_train_iv(:, 1:Ntraj, :), m, [] );     % m x (Ntraj*Nsim_total)
+            %convergenc = norm(pre_A_iv - A_iv, 2)
+            convergence = convergence - 1;
+            pre_A_iv = A_iv;
         end
         save('A_iv.mat', 'A_iv');
         save('B_iv.mat', 'B_iv');
