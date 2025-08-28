@@ -1,4 +1,4 @@
-function [psi_true_all, psi_pred_sim, MSE_box, state_error, stopTraj] = simulation(x, u, Obs_state, A, B, C, Ntraj, Nsim, n, FigShow)
+function [psi_true_all, psi_pred_sim, RMSE_box, state_error, stopTraj] = simulation(x, u, Obs_state, A, B, C, Ntraj, Nsim, n, FigShow)
 
 [num_lifted_states, ~] = size(A);
 %prediction_error = zeros(Ntraj, Nsim);
@@ -47,12 +47,16 @@ for sim = 1:Nsim
 end
 
 %mean_prediction_error = mean(prediction_error(:,:,index), 3);
-%mean_state_error = mean(state_error(:,:,index), 3);
-%RMSE_state = sqrt(mean(state_error.^2, 3));
-RMSE_state = sqrt(mean(mean(simulation_error, 3),2))';
-MSE_perc = sqrt(mean(mean(simulation_error_perc, 3),2))';
-MSE_box = sqrt(mean(mean(simulation_error_box, 3),2))';
 
+%RMSE_state = sqrt(mean(mean(simulation_error, 3),2))';
+%MSE_perc = sqrt(mean(mean(simulation_error_perc, 3),2))';
+%MSE_box = sqrt(mean(mean(simulation_error_box, 3),2))';
+
+for j = 4:num_lifted_states 
+    RMSE(j-3) = sqrt(mean(sum(simulation_error(1:j,:,:), 1:2)));
+    RMSE_perc(j-3) = sqrt(mean(sum(simulation_error_perc(1:j,:,:), 1:2)));
+    RMSE_box(j-3) = sqrt(mean(sum(simulation_error_box(1:j,:,:), 1:2))); 
+end
 
 if FigShow
     close all
