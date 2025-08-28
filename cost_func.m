@@ -22,13 +22,15 @@ function cost = cost_func(theta, Phi0_all, U_all, X_plus_all, N, nZ, m, Nsim)
         X_pred = [A B] * Z;
 
         % Accumulate cost
-        weighted_diff = X_plus - X_pred;
-        box = [4*pi,10*pi,2*pi,10*pi, 1, 2, 2, 10*pi, 5*pi, 10*pi];
-        for i = 1:nZ
-            weighted_diff(i,:) = (weighted_diff(i,:)/box(i)).^(1/2);
-        end
-        total_cost = total_cost + norm(X_plus - X_pred, 'fro')^2;
-        %total_cost = total_cost + norm(weighted_diff, 'fro')^2;
+        total_cost = total_cost + sqrt(mean(sum((X_plus(1:4,:) - X_pred(1:4,:)).^2, 1:2)));
+
+        %weighted_diff = X_plus - X_pred;
+        %box = [4*pi,10*pi,2*pi,10*pi, 1, 2, 2, 10*pi, 5*pi, 1];
+        %for i = 1:nZ
+        %    weighted_diff(i,:) = (weighted_diff(i,:)/box(i)).^(1/2);
+        %end
+        %total_cost = total_cost + sqrt(mean(sum((X_plus - X_pred).^2, 1:2)));
+        %total_cost = total_cost + norm(weighted_diff, 2)^2;
     end
 
     cost = total_cost;
